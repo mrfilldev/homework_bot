@@ -38,7 +38,8 @@ HOMEWORK_STATUSES = {
 
 
 class StatusError(Exception):
-    """Класс-заглушка для отображения ошибки"""
+    """Класс-заглушка для отображения ошибки."""
+
     pass
 
 
@@ -56,7 +57,7 @@ def send_message(bot, message):
 
 
 def get_api_answer(current_timestamp):
-    """Получене ответа от ENDPOINT"""
+    """Получене ответа от ENDPOINT."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     response = requests.get(
@@ -85,7 +86,7 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Парсинг данных из ответа  API"""
+    """Парсинг данных из ответа  API."""
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     message = 'status invalid'
