@@ -40,12 +40,6 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-TOKENS_CHECK = {
-    'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
-    'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
-    'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID
-}
-
 
 def send_message(bot, message):
     """Отправка сообщения."""
@@ -109,7 +103,12 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверка доступности переменных окружения."""
-    for key, value in TOKENS_CHECK.items():
+    tokens_check = {
+        'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
+        'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
+        'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID
+    }
+    for key, value in tokens_check.items():
         if not value:
             logger.critical(
                 f'Нет переменной окружения {key}.'
@@ -131,12 +130,10 @@ def main():
             current_timestamp = response.get('current_date', current_timestamp)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            send_message(bot, message)
             logger.error(message)
         finally:
             time.sleep(TELEGRAM_RETRY_TIME)
 
 
 if __name__ == '__main__':
-    if check_tokens():
-        main()
+    main()
