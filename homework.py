@@ -90,7 +90,7 @@ def check_response(response):
 
 def parse_status(homework):
     """Парсинг данных из ответа  API."""
-    if ('homework_name' in homework) and ('status' in  homework):
+    if ('homework_name' in homework) and ('status' in homework):
         homework_name = homework.get('homework_name')
         homework_status = homework.get('status')
         message = 'status invalid'
