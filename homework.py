@@ -1,12 +1,11 @@
 import os
 import sys
-
 import time
+import logging
+from dotenv import load_dotenv
+
 import requests
 import telegram
-import logging
-
-from dotenv import load_dotenv
 
 from exceptions import StatusError
 
@@ -29,8 +28,8 @@ load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-
 TELEGRAM_RETRY_TIME = 600
+
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -61,44 +60,47 @@ def get_api_answer(current_timestamp):
     try:
         response = requests.get(ENDPOINT, headers=HEADERS,
                                 params=params)
-        if response.status_code != 200:
-            api_message = (
-                f'Эндпоинт {ENDPOINT} недоступен.'
-                f' Код ответа API: {response.status_code}')
-            logger.error(api_message)
-            raise StatusError(api_message)
-        return response.json()
     except requests.RequestException as request_error:
         api_message = f'Код ответе API: {request_error}'
         raise StatusError(api_message)
+    if response.status_code != 200:
+        api_message = (
+            f'Эндпоинт {ENDPOINT} недоступен.'
+            f' Код ответа API: {response.status_code}')
+        logger.error(api_message)
+        raise StatusError(api_message)
+    return response.json()
 
 
 def check_response(response):
     """Проверка ответа API на корректность."""
-    try:
-        if isinstance(response, dict):
+    if isinstance(response, dict):
+        if 'homeworks' in response:
             homeworks = response['homeworks']
+            if not isinstance(homeworks, list):
+                raise TypeError(f'homeworks не list {homeworks}')
+            if not homeworks:
+                raise KeyError(f'homeworks - пуст: {homeworks}')
+            return homeworks
         else:
-            raise TypeError('response - не словарь')
-    except KeyError:
-        raise KeyError('Нет ключа')
-    if not isinstance(homeworks, list):
-        raise TypeError(f'homeworks не list {homeworks}')
-    if homeworks.count == 0:
-        raise KeyError(f'homeworks - пуст: {homeworks}')
-    return homeworks
+            raise KeyError('Нет ключа')
+    else:
+        raise TypeError('response - не словарь')
 
 
 def parse_status(homework):
     """Парсинг данных из ответа  API."""
-    homework_name = homework.get('homework_name')
-    homework_status = homework.get('status')
-    message = 'status invalid'
-    verdict = HOMEWORK_STATUSES[homework_status]
-    if homework_status not in HOMEWORK_STATUSES:
-        logger.error(message)
-        raise KeyError(message)
-    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    if ('homework_name' in homework) and ('status' in  homework):
+        homework_name = homework.get('homework_name')
+        homework_status = homework.get('status')
+        message = 'status invalid'
+        if homework_status not in HOMEWORK_STATUSES:
+            logger.error(message)
+            raise KeyError(message)
+        verdict = HOMEWORK_STATUSES[homework_status]
+        return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    else:
+        raise KeyError
 
 
 def check_tokens():
@@ -108,13 +110,17 @@ def check_tokens():
         'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
         'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID
     }
+    flag = 1
     for key, value in tokens_check.items():
         if not value:
             logger.critical(
                 f'Нет переменной окружения {key}.'
             )
-            return False
-    return True
+            flag = 0
+    if flag == 1:
+        return True
+    else:
+        return False
 
 
 def main():
@@ -130,7 +136,7 @@ def main():
             current_timestamp = response.get('current_date', current_timestamp)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            logger.error(message)
+            logger.exception(message)
         finally:
             time.sleep(TELEGRAM_RETRY_TIME)
 
