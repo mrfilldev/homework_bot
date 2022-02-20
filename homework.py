@@ -2,8 +2,9 @@ import os
 import sys
 import time
 import logging
-from dotenv import load_dotenv
+from datetime import date, datetime
 
+from dotenv import load_dotenv
 import requests
 import telegram
 
@@ -43,7 +44,7 @@ HOMEWORK_STATUSES = {
 def send_message(bot, message):
     """Отправка сообщения."""
     try:
-        bot.send_message(url=TELEGRAM_CHAT_ID, message=message)
+        bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info(
             f'Отправка сообщения {message}.'
         )
@@ -58,8 +59,11 @@ def get_api_answer(current_timestamp):
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
-        response = requests.get(ENDPOINT, headers=HEADERS,
-                                params=params)
+        response = requests.get(
+            url=ENDPOINT,
+            headers=HEADERS,
+            params=params,
+        )
     except requests.RequestException as request_error:
         api_message = f'Код ответе API: {request_error}'
         raise StatusError(api_message)
@@ -123,13 +127,15 @@ def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
+    current_time = str(date.today()) + ' ' + str(datetime.now().time())
     count = 0
+    send_message(bot, f'Запуск бота \nдата: {current_time}')
     while True:
+        send_message(bot, f'новый цикл \nциклов: {count}')
+        count += 1
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
-            count += 1
-            send_message(bot, f'новый цикл \nВсего: {count}')
             send_message(bot, parse_status(homeworks[0]))
             logger.info('Изменений не было, ждем и проверяем еще раз.')
             current_timestamp = response.get('current_date', current_timestamp)
