@@ -105,15 +105,15 @@ def check_tokens():
     tokens_check = {
         'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
         'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
-        'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID
+        'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID,
     }
     list_check = ''
     for key, value in tokens_check.items():
         if not value:
-            list_check += str(value) + '\n'
-    logger.critical(
-        f'Нет переменной окружения {list_check}.'
-    )
+            list_check += str(key) + '\n'
+            logger.critical(
+                f'Нет переменной окружения {list_check}'
+            )
     if list_check != '':
         return False
     return True
