@@ -28,7 +28,7 @@ load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-TELEGRAM_RETRY_TIME = 600
+TELEGRAM_RETRY_TIME = 6
 
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
@@ -74,33 +74,30 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверка ответа API на корректность."""
-    if isinstance(response, dict):
-        if 'homeworks' in response:
-            homeworks = response['homeworks']
-            if not isinstance(homeworks, list):
-                raise TypeError(f'homeworks не list {homeworks}')
-            if not homeworks:
-                raise KeyError(f'homeworks - пуст: {homeworks}')
-            return homeworks
-        else:
-            raise KeyError('Нет ключа')
-    else:
+    if not isinstance(response, dict):
         raise TypeError('response - не словарь')
+    if 'homeworks' not in response:
+        raise KeyError('Нет ключа')
+    homeworks = response['homeworks']
+    if not isinstance(homeworks, list):
+        raise TypeError(f'homeworks не list {homeworks}')
+    if not homeworks:
+        raise KeyError(f'homeworks - пуст: {homeworks}')
+    return homeworks
 
 
 def parse_status(homework):
     """Парсинг данных из ответа  API."""
-    if ('homework_name' in homework) and ('status' in homework):
-        homework_name = homework.get('homework_name')
-        homework_status = homework.get('status')
-        message = 'status invalid'
-        if homework_status not in HOMEWORK_STATUSES:
-            logger.error(message)
-            raise KeyError(message)
-        verdict = HOMEWORK_STATUSES[homework_status]
-        return f'Изменился статус проверки работы "{homework_name}". {verdict}'
-    else:
-        raise KeyError
+    if not (('homework_name' in homework) and ('status' in homework)):
+        raise KeyError('не обнаружены требуемые ключи в homework')
+    homework_name = homework.get('homework_name')
+    homework_status = homework.get('status')
+    message = 'status invalid'
+    if homework_status not in HOMEWORK_STATUSES:
+        logger.error(message)
+        raise KeyError(message)
+    verdict = HOMEWORK_STATUSES[homework_status]
+    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def check_tokens():
@@ -110,17 +107,16 @@ def check_tokens():
         'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
         'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID
     }
-    flag = 1
+    list_check = ''
     for key, value in tokens_check.items():
         if not value:
-            logger.critical(
-                f'Нет переменной окружения {key}.'
-            )
-            flag = 0
-    if flag == 1:
-        return True
-    else:
+            list_check += str(value) + '\n'
+    logger.critical(
+        f'Нет переменной окружения {list_check}.'
+    )
+    if list_check != '':
         return False
+    return True
 
 
 def main():
@@ -141,5 +137,7 @@ def main():
             time.sleep(TELEGRAM_RETRY_TIME)
 
 
-if __name__ == '__main__':
-    main()
+result = check_tokens()
+if result:
+    if __name__ == '__main__':
+        main()
