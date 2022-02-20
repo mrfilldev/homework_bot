@@ -28,7 +28,7 @@ load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-TELEGRAM_RETRY_TIME = 6
+TELEGRAM_RETRY_TIME = 600
 
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
@@ -123,10 +123,13 @@ def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
+    count = 0
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
+            count += 1
+            send_message(bot, f'новый цикл \nВсего: {count}')
             send_message(bot, parse_status(homeworks[0]))
             logger.info('Изменений не было, ждем и проверяем еще раз.')
             current_timestamp = response.get('current_date', current_timestamp)
