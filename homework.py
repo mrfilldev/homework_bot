@@ -127,12 +127,12 @@ def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    current_time = str(date.today()) + ' ' + str(datetime.now().time())
-    count = 0
-    send_message(bot, f'Запуск бота \nдата: {current_time}')
+    # current_time = str(date.today()) + ' ' + str(datetime.now().time())
+    # count = 0
+    # send_message(bot, f'Запуск бота \nдата: {current_time}')
     while True:
-        send_message(bot, f'новый цикл \nциклов: {count}')
-        count += 1
+        # send_message(bot, f'новый цикл \nциклов: {count}')
+        # count += 1
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
